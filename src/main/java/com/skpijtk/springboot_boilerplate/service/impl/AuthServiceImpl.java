@@ -1,24 +1,27 @@
 package com.skpijtk.springboot_boilerplate.service.impl;
 
+import com.skpijtk.springboot_boilerplate.dto.auth.LoginRequest;
+import com.skpijtk.springboot_boilerplate.dto.auth.LoginResponse;
 import com.skpijtk.springboot_boilerplate.dto.auth.RegisterRequest;
 import com.skpijtk.springboot_boilerplate.dto.auth.RegisterResponse;
 import com.skpijtk.springboot_boilerplate.dto.response.ApiResponse;
 import com.skpijtk.springboot_boilerplate.exception.EmailAlreadyExistsException;
+import com.skpijtk.springboot_boilerplate.exception.ValidationException;
 import com.skpijtk.springboot_boilerplate.model.User;
 import com.skpijtk.springboot_boilerplate.repository.UserRepository;
 import com.skpijtk.springboot_boilerplate.service.AuthService;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.skpijtk.springboot_boilerplate.config.JwtTokenProvider;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
+@RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
 
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtTokenProvider jwtTokenProvider;
 
     @Override
     public ApiResponse<?> registerAdmin(RegisterRequest request) {
@@ -34,6 +37,26 @@ public class AuthServiceImpl implements AuthService {
 
         userRepository.save(user);
 
-        return new ApiResponse<>(200, "Signup successful", new RegisterResponse(user.getEmail()));
+        return new ApiResponse<>(200, "Signup successful", "OK", new RegisterResponse(user.getEmail()));
+    }
+
+    @Override
+    public LoginResponse loginAdmin(LoginRequest request) {
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new ValidationException("T-ERR-EMAIL-NOT-REGISTERED"));
+
+        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash()) ||
+                user.getRole() != User.Role.ADMIN) {
+            throw new ValidationException("T-ERR-INVALID-CREDENTIALS");
+        }
+
+        String token = jwtTokenProvider.generateToken(user.getUserId(), user.getRole());
+
+        return new LoginResponse(
+                user.getUserId(),
+                user.getName(),
+                user.getRole().name(),
+                token
+        );
     }
 }

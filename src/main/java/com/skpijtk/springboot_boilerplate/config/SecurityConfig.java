@@ -24,15 +24,12 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
-                    "/swagger-ui/**",
-                    "/v3/api-docs/**",
-                    "/swagger-ui.html",
                     "/admin/signup",
                     "/admin/login"
                 ).permitAll()
                 .anyRequest().authenticated()
             )
-            .httpBasic(Customizer.withDefaults()); // atau formLogin jika kamu pakai login UI
+            .httpBasic(Customizer.withDefaults());
 
         return http.build();
     }

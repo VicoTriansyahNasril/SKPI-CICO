@@ -10,5 +10,6 @@ import lombok.Setter;
 public class ApiResponse<T> {
     private int statusCode;
     private String message;
+    private String status;
     private T data;
 }

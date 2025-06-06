@@ -12,7 +12,7 @@ import lombok.Setter;
 public class RegisterRequest {
 
     @NotBlank(message = "Name is required")
-    @Size(min = 3, max = 50, message = "Name must be between 3 and 50 characters")
+    @Size(min = 3, message = "Name must be at least 3 character")
     private String name;
 
     @NotBlank(message = "Email is required")
@@ -23,7 +23,7 @@ public class RegisterRequest {
     @NotBlank(message = "Password is required")
     @Pattern(
         regexp = "^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d]{6,12}$",
-        message = "Password must be 6-12 characters and contain letters and numbers"
+        message = "Password must be at least 6 characters and contain letters and numbers"
     )
     private String password;
 }
