@@ -27,7 +27,7 @@ public class AuthController {
     public ResponseEntity<ApiResponse<LoginResponse>> loginAdmin(@Valid @RequestBody LoginRequest request) {
         LoginResponse response = authService.loginAdmin(request);
         return ResponseEntity.ok(
-            new ApiResponse<>(200, "T-SUCC-002", "OK", response)
+            ApiResponse.success(response, "Login successful")
         );
     }
 }

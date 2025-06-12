@@ -1,6 +1,10 @@
 package com.skpijtk.springboot_boilerplate.exception;
 
 import com.skpijtk.springboot_boilerplate.dto.response.ApiResponse;
+
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -52,5 +56,29 @@ public class GlobalExceptionHandler {
         ex.printStackTrace();
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new ApiResponse<>(500, "Internal Server Error. Please try again", "Internal Server Error", null));
+    }
+
+    @ExceptionHandler(ExpiredJwtException.class)
+    public ResponseEntity<ApiResponse<?>> handleExpiredJwt(ExpiredJwtException ex) {
+        return new ResponseEntity<>(
+            ApiResponse.unauthorized("Token expired. Please login again"),
+            HttpStatus.UNAUTHORIZED
+        );
+    }
+
+    @ExceptionHandler(JwtException.class)
+    public ResponseEntity<ApiResponse<?>> handleInvalidJwt(JwtException ex) {
+        return new ResponseEntity<>(
+            ApiResponse.unauthorized("Invalid token. Unauthorized access"),
+            HttpStatus.UNAUTHORIZED
+        );
+    }
+
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<ApiResponse<?>> handleRuntime(RuntimeException ex) {
+        return new ResponseEntity<>(
+            new ApiResponse<>(401, "Unauthorized", "Data failed to display", null),
+            HttpStatus.UNAUTHORIZED
+        );
     }
 }

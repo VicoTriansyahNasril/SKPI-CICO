@@ -1,9 +1,6 @@
 package com.skpijtk.springboot_boilerplate.service.impl;
 
-import com.skpijtk.springboot_boilerplate.dto.auth.LoginRequest;
-import com.skpijtk.springboot_boilerplate.dto.auth.LoginResponse;
-import com.skpijtk.springboot_boilerplate.dto.auth.RegisterRequest;
-import com.skpijtk.springboot_boilerplate.dto.auth.RegisterResponse;
+import com.skpijtk.springboot_boilerplate.dto.auth.*;
 import com.skpijtk.springboot_boilerplate.dto.response.ApiResponse;
 import com.skpijtk.springboot_boilerplate.exception.EmailAlreadyExistsException;
 import com.skpijtk.springboot_boilerplate.exception.ValidationException;
@@ -37,7 +34,7 @@ public class AuthServiceImpl implements AuthService {
 
         userRepository.save(user);
 
-        return new ApiResponse<>(200, "Signup successful", "OK", new RegisterResponse(user.getEmail()));
+        return new ApiResponse<>(200, "OK", "Signup successful", new RegisterResponse(user.getEmail()));
     }
 
     @Override
@@ -46,7 +43,7 @@ public class AuthServiceImpl implements AuthService {
                 .orElseThrow(() -> new ValidationException("T-ERR-EMAIL-NOT-REGISTERED"));
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash()) ||
-                user.getRole() != User.Role.ADMIN) {
+            user.getRole() != User.Role.ADMIN) {
             throw new ValidationException("T-ERR-INVALID-CREDENTIALS");
         }
 
@@ -56,7 +53,18 @@ public class AuthServiceImpl implements AuthService {
                 user.getUserId(),
                 user.getName(),
                 user.getRole().name(),
-                token
-        );
+                token);
+    }
+
+    @Override
+    public AdminProfileResponse getAdminProfile(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ValidationException("User not found"));
+
+        return AdminProfileResponse.builder()
+                .name(user.getName())
+                .role(user.getRole().name())
+                .time(AdminProfileResponse.getFormattedTime())
+                .build();
     }
 }
