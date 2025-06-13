@@ -11,6 +11,7 @@ import com.skpijtk.springboot_boilerplate.service.UserService;
 import com.skpijtk.springboot_boilerplate.specification.AttendanceSpecification;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -148,4 +149,30 @@ public class AdminController {
     ) {
         return studentService.getAllStudentsWithAttendance(student_name, startdate, enddate, page, size);
     }
+
+    @DeleteMapping("/mahasiswa/{id_student}")
+    public ResponseEntity<ApiResponse<?>> deleteMahasiswa(@PathVariable("id_student") Long studentId) {
+        Optional<Student> optionalStudent = studentRepository.findById(studentId);
+
+        if (optionalStudent.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                new ApiResponse<>(HttpStatus.NOT_FOUND.value(), "Not Found", "Data mahasiswa tidak ditemukan", null)
+            );
+        }
+
+        Student student = optionalStudent.get();
+        User user = student.getUser();
+
+        studentRepository.delete(student);
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("studentId", student.getStudentId());
+        data.put("studentName", user.getName());
+        data.put("nim", student.getNim());
+
+        return ResponseEntity.ok(
+            ApiResponse.success(data, "Data mahasiswa berhasil dihapus")
+        );
+    }
+
 }

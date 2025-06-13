@@ -1,5 +1,6 @@
 package com.skpijtk.springboot_boilerplate.dto.attendance;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.skpijtk.springboot_boilerplate.model.Attendance;
 import lombok.Builder;
 import lombok.Getter;
@@ -13,9 +14,16 @@ import java.time.LocalDateTime;
 @Builder
 public class AttendanceResponse {
     private Long attendanceId;
+
+    @JsonFormat(pattern = "HH:mm:ss")
     private LocalDateTime checkinTime;
+
+    @JsonFormat(pattern = "HH:mm:ss")
     private LocalDateTime checkoutTime;
+
+    @JsonFormat(pattern = "dd MMMM yyyy", locale = "id")
     private LocalDate attendanceDate;
+
     private boolean late;
     private String notesCheckin;
     private String notesCheckout;
