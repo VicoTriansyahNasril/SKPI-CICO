@@ -2,12 +2,14 @@ package com.skpijtk.springboot_boilerplate.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.springframework.http.HttpStatus;
 
 @Getter
 @Setter
 @AllArgsConstructor
+@NoArgsConstructor
 public class ApiResponse<T> {
     private int statusCode;
     private String status;
@@ -28,5 +30,14 @@ public class ApiResponse<T> {
 
     public static <T> ApiResponse<T> internalError(String message) {
         return new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Internal Server Error", message, null);
+    }
+
+    public static <T> ApiResponse<T> error(T data, String message, int statusCode, String status) {
+        ApiResponse<T> response = new ApiResponse<>();
+        response.setData(data);
+        response.setMessage(message);
+        response.setStatusCode(statusCode);
+        response.setStatus(status);
+        return response;
     }
 }

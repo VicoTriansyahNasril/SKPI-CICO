@@ -40,11 +40,11 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public LoginResponse loginAdmin(LoginRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new ValidationException("T-ERR-EMAIL-NOT-REGISTERED"));
+                .orElseThrow(() -> new ValidationException("Email tidak terdaftar"));
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash()) ||
             user.getRole() != User.Role.ADMIN) {
-            throw new ValidationException("T-ERR-INVALID-CREDENTIALS");
+            throw new ValidationException("Email atau password salah");
         }
 
         String token = jwtTokenProvider.generateToken(user.getUserId(), user.getRole());
@@ -66,5 +66,30 @@ public class AuthServiceImpl implements AuthService {
                 .role(user.getRole().name())
                 .time(AdminProfileResponse.getFormattedTime())
                 .build();
+    }
+
+    @Override
+    public ApiResponse<LoginResponse> loginMahasiswa(LoginRequest request) {
+        User user = userRepository.findByEmail(request.getEmail())
+            .orElseThrow(() -> new RuntimeException("Akun tidak ditemukan"));
+
+        if (!user.getRole().equals(User.Role.MAHASISWA)) {
+            throw new RuntimeException("Akses ditolak, bukan Mahasiswa");
+        }
+
+        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+            throw new RuntimeException("Password salah");
+        }
+
+        String token = jwtTokenProvider.generateToken(user.getUserId(), user.getRole());
+
+        LoginResponse loginResponse = new LoginResponse(
+            user.getUserId(),
+            user.getName(),
+            user.getRole().name(),
+            token
+        );
+
+        return ApiResponse.success(loginResponse, "Login berhasil");
     }
 }

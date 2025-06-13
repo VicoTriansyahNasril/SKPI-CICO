@@ -10,4 +10,5 @@ public interface AuthService {
     ApiResponse<?> registerAdmin(RegisterRequest request);
     LoginResponse loginAdmin(LoginRequest request);
     AdminProfileResponse getAdminProfile(Long userId);
+    ApiResponse<LoginResponse> loginMahasiswa(LoginRequest request);
 }

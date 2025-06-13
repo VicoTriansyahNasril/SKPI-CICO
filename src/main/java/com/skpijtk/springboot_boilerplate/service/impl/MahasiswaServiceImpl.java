@@ -15,9 +15,13 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -26,6 +30,7 @@ public class MahasiswaServiceImpl implements MahasiswaService {
     private final StudentRepository studentRepository;
     private final UserRepository userRepository;
     private final AttendanceRepository attendanceRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     @Transactional
@@ -40,9 +45,9 @@ public class MahasiswaServiceImpl implements MahasiswaService {
             );
         }
 
-        String[] names = request.getStudentName().trim().split("\\s+");
+        String[] names = request.getStudentName().trim().split("\\s+", 2);
         String firstName = names[0];
-        String lastName = names[1];
+        String lastName = names.length > 1 ? names[1] : "";
 
         User user = student.getUser();
         user.setName(request.getStudentName());
@@ -52,6 +57,7 @@ public class MahasiswaServiceImpl implements MahasiswaService {
         student.setLastName(lastName);
         student.setEmail(request.getEmail());
         student.setNim(request.getNim());
+        student.setUpdatedAt(LocalDateTime.now());
 
         userRepository.save(user);
         studentRepository.save(student);
@@ -66,11 +72,39 @@ public class MahasiswaServiceImpl implements MahasiswaService {
     }
 
     @Override
+    @Transactional
     public ResponseEntity<Object> createMahasiswa(CreateMahasiswaRequest request) {
-        return ResponseHandler.generateResponse(
-                "Fitur tambah mahasiswa belum diimplementasikan",
-                HttpStatus.NOT_IMPLEMENTED,
-                null
-        );
+        if (userRepository.existsByEmail(request.getEmail())) {
+            return ResponseHandler.generateResponse("Email sudah digunakan", HttpStatus.BAD_REQUEST, null);
+        }
+
+        User user = new User();
+        user.setName(request.getStudentName());
+        user.setEmail(request.getEmail());
+        user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+        user.setRole(User.Role.MAHASISWA);
+        userRepository.save(user);
+
+        Student student = new Student();
+        student.setUser(user);
+        student.setNim(request.getNim());
+        student.setEmail(request.getEmail());
+
+        String[] names = request.getStudentName().split(" ", 2);
+        student.setFirstName(names[0]);
+        student.setLastName(names.length > 1 ? names[1] : "");
+
+        student.setCreatedAt(LocalDateTime.now());
+        student.setUpdatedAt(LocalDateTime.now());
+
+        studentRepository.save(student);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("userId", user.getUserId());
+        response.put("studentId", student.getStudentId());
+        response.put("name", user.getName());
+        response.put("email", user.getEmail());
+
+        return ResponseHandler.generateResponse("Mahasiswa berhasil ditambahkan", HttpStatus.CREATED, response);
     }
 }
