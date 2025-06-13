@@ -1,5 +1,6 @@
 package com.skpijtk.springboot_boilerplate.controller;
 
+import com.skpijtk.springboot_boilerplate.dto.attendance.AttendanceResponse;
 import com.skpijtk.springboot_boilerplate.dto.response.ApiResponse;
 import com.skpijtk.springboot_boilerplate.model.Attendance;
 import com.skpijtk.springboot_boilerplate.model.Student;
@@ -174,5 +175,34 @@ public class AdminController {
             ApiResponse.success(data, "Data mahasiswa berhasil dihapus")
         );
     }
+
+    @GetMapping("/mahasiswa/{id_student}")
+    public ResponseEntity<ApiResponse<?>> getDetailMahasiswa(@PathVariable("id_student") Long studentId) {
+        Optional<Student> studentOpt = studentRepository.findById(studentId);
+
+        if (studentOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(ApiResponse.badRequest("Data mahasiswa tidak ditemukan"));
+        }
+
+        Student student = studentOpt.get();
+
+        List<AttendanceResponse> attendanceList = attendanceRepository
+                .findByStudentStudentId(studentId)
+                .stream()
+                .map(AttendanceResponse::from)
+                .toList();
+
+        Map<String, Object> responseData = new LinkedHashMap<>();
+        responseData.put("studentId", student.getStudentId());
+        responseData.put("userId", student.getUser().getUserId());
+        responseData.put("studentName", student.getFirstName() + " " + student.getLastName());
+        responseData.put("nim", student.getNim());
+        responseData.put("email", student.getEmail());
+        responseData.put("attendanceData", attendanceList);
+
+        return ResponseEntity.ok(ApiResponse.success(responseData, "Data mahasiswa berhasil diambil"));
+    }
+
 
 }
