@@ -3,18 +3,26 @@ package com.skpijtk.springboot_boilerplate.controller;
 import com.skpijtk.springboot_boilerplate.dto.attendance.AttendanceResponse;
 import com.skpijtk.springboot_boilerplate.dto.attendance.RiwayatAttendanceResponse;
 import com.skpijtk.springboot_boilerplate.dto.response.ApiResponse;
+import com.skpijtk.springboot_boilerplate.dto.settings.AppSettingRequest;
+import com.skpijtk.springboot_boilerplate.dto.settings.AppSettingResponse;
 import com.skpijtk.springboot_boilerplate.model.Attendance;
 import com.skpijtk.springboot_boilerplate.model.Student;
 import com.skpijtk.springboot_boilerplate.model.User;
 import com.skpijtk.springboot_boilerplate.repository.AttendanceRepository;
 import com.skpijtk.springboot_boilerplate.repository.StudentRepository;
+import com.skpijtk.springboot_boilerplate.service.AppSettingService;
 import com.skpijtk.springboot_boilerplate.service.StudentService;
 import com.skpijtk.springboot_boilerplate.service.UserService;
 import com.skpijtk.springboot_boilerplate.specification.AttendanceSpecification;
+import com.skpijtk.springboot_boilerplate.util.ResponseHandler;
+
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -29,6 +37,8 @@ public class AdminController {
     private final StudentRepository studentRepository;
     private final AttendanceRepository attendanceRepository;
     private final StudentService studentService;
+    @Autowired
+    private AppSettingService appSettingService;
 
     @GetMapping("/profile")
     public ResponseEntity<ApiResponse<?>> getAdminProfile(@RequestHeader("Authorization") String bearerToken) {
@@ -249,4 +259,33 @@ public class AdminController {
         return ResponseEntity.ok(outer);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/system-settings")
+    public ResponseEntity<Object> getSystemSettings() {
+        try {
+            Optional<AppSettingResponse> response = appSettingService.getAppSettings();
+            if (response.isPresent()) {
+                return ResponseHandler.generateResponse("Berhasil mendapatkan pengaturan sistem", HttpStatus.OK, response.get());
+            } else {
+                return ResponseHandler.generateResponse("Pengaturan sistem tidak ditemukan", HttpStatus.NOT_FOUND, null);
+            }
+        } catch (Exception e) {
+            return ResponseHandler.generateResponse("Terjadi kesalahan saat memuat pengaturan sistem", HttpStatus.INTERNAL_SERVER_ERROR, null);
+        }
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PutMapping("/system-settings")
+    public ResponseEntity<Object> updateSystemSettings(@RequestBody AppSettingRequest request) {
+        try {
+            Optional<AppSettingResponse> updated = appSettingService.updateAppSettings(request);
+            if (updated.isPresent()) {
+                return ResponseHandler.generateResponse("Pengaturan berhasil diperbarui", HttpStatus.OK, updated.get());
+            } else {
+                return ResponseHandler.generateResponse("Pengaturan tidak ditemukan", HttpStatus.NOT_FOUND, null);
+            }
+        } catch (Exception e) {
+            return ResponseHandler.generateResponse("Terjadi kesalahan saat memperbarui pengaturan", HttpStatus.INTERNAL_SERVER_ERROR, null);
+        }
+    }
 }
