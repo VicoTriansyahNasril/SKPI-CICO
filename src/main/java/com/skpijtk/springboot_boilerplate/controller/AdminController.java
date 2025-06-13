@@ -7,6 +7,7 @@ import com.skpijtk.springboot_boilerplate.model.User;
 import com.skpijtk.springboot_boilerplate.repository.AttendanceRepository;
 import com.skpijtk.springboot_boilerplate.repository.StudentRepository;
 import com.skpijtk.springboot_boilerplate.service.UserService;
+import com.skpijtk.springboot_boilerplate.specification.AttendanceSpecification;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
@@ -63,37 +64,42 @@ public class AdminController {
             @RequestParam(required = false) String nim,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startdate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate enddate,
-            @RequestParam(required = false, defaultValue = "attendanceDate") String sortBy,
-            @RequestParam(required = false, defaultValue = "desc") String sortDir,
-            @RequestParam(required = false, defaultValue = "0") int page,
-            @RequestParam(required = false, defaultValue = "10") int size
+            @RequestParam(defaultValue = "attendanceDate") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
     ) {
-        List<Attendance> result = attendanceRepository.findFilteredAttendances(student_name, nim, startdate, enddate);
+        List<Attendance> filteredList = attendanceRepository.findAll(
+                AttendanceSpecification.filterByCriteria(student_name, nim, startdate, enddate)
+        );
 
+        // Manual sorting
         Comparator<Attendance> comparator;
-        switch (sortBy) {
-            case "nim" -> comparator = Comparator.comparing(a -> a.getStudent().getNim(), Comparator.nullsLast(String::compareToIgnoreCase));
-            case "studentName" -> comparator = Comparator.comparing(
-                    a -> (a.getStudent().getFirstName() + " " + a.getStudent().getLastName()), Comparator.nullsLast(String::compareToIgnoreCase));
-            case "attendanceDate" -> comparator = Comparator.comparing(Attendance::getAttendanceDate, Comparator.nullsLast(LocalDate::compareTo));
-            default -> comparator = Comparator.comparing(Attendance::getAttendanceDate, Comparator.nullsLast(LocalDate::compareTo));
+        if (sortBy.equalsIgnoreCase("nim")) {
+            comparator = Comparator.comparing(a -> a.getStudent().getNim(), Comparator.nullsLast(String::compareToIgnoreCase));
+        } else if (sortBy.equalsIgnoreCase("attendanceDate")) {
+            comparator = Comparator.comparing(Attendance::getAttendanceDate);
+        } else {
+            comparator = Comparator.comparing(Attendance::getAttendanceId); // default fallback
         }
+        if (sortDir.equalsIgnoreCase("desc")) comparator = comparator.reversed();
+        filteredList.sort(comparator);
 
-        if (sortDir.equalsIgnoreCase("desc")) {
-            comparator = comparator.reversed();
-        }
+        // Manual pagination
+        int start = page * size;
+        int end = Math.min(start + size, filteredList.size());
+        List<Attendance> pagedList = (start >= end) ? new ArrayList<>() : filteredList.subList(start, end);
 
-        result.sort(comparator);
-
+        // Response building
         List<Map<String, Object>> dataList = new ArrayList<>();
-        for (Attendance a : result) {
+        for (Attendance a : pagedList) {
             Student s = a.getStudent();
             User u = s.getUser();
 
             Map<String, Object> studentMap = new HashMap<>();
             studentMap.put("studentId", s.getStudentId());
             studentMap.put("userId", u.getUserId());
-            studentMap.put("studentName", s.getFirstName() + " " + s.getLastName());
+            studentMap.put("studentName", u.getName());
             studentMap.put("nim", s.getNim());
             studentMap.put("email", s.getEmail());
 
@@ -111,17 +117,10 @@ public class AdminController {
             dataList.add(studentMap);
         }
 
-        int totalData = dataList.size();
-        int totalPage = (int) Math.ceil((double) totalData / size);
-        int fromIndex = Math.min(page * size, totalData);
-        int toIndex = Math.min(fromIndex + size, totalData);
-
-        List<Map<String, Object>> paginatedData = dataList.subList(fromIndex, toIndex);
-
         Map<String, Object> responseData = new HashMap<>();
-        responseData.put("data", paginatedData);
-        responseData.put("totalData", totalData);
-        responseData.put("totalPage", totalPage);
+        responseData.put("data", dataList);
+        responseData.put("totalData", filteredList.size());
+        responseData.put("totalPage", (int) Math.ceil((double) filteredList.size() / size));
         responseData.put("currentPage", page);
         responseData.put("pageSize", size);
 
