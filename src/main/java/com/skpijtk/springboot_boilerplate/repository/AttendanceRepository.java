@@ -1,6 +1,7 @@
 package com.skpijtk.springboot_boilerplate.repository;
 
 import com.skpijtk.springboot_boilerplate.model.Attendance;
+import com.skpijtk.springboot_boilerplate.model.Student;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
@@ -14,4 +15,5 @@ public interface AttendanceRepository extends JpaRepository<Attendance, Long>, J
     long countByAttendanceDateAndIsLateTrue(LocalDate date);
     List<Attendance> findByStudentStudentId(Long studentId);
     List<Attendance> findByStudentStudentIdAndAttendanceDateBetween(Long studentId, LocalDate startDate, LocalDate endDate);
+    List<Attendance> findByStudent(Student student);
 }

@@ -3,6 +3,7 @@ package com.skpijtk.springboot_boilerplate.model;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+
 import java.time.LocalDateTime;
 
 @Getter
@@ -22,12 +23,13 @@ public class Student {
 
     private String nim;
 
-    @Column(name = "first_name")
+    @Column(name = "first_name", nullable = false, length = 50)
     private String firstName;
 
-    @Column(name = "last_name")
+    @Column(name = "last_name", nullable = false, length = 50)
     private String lastName;
 
+    @Column(nullable = false, unique = true, length = 50)
     private String email;
 
     @Column(name = "phone_number")

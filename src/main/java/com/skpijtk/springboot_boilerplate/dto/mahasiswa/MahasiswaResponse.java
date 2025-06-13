@@ -28,7 +28,9 @@ public class MahasiswaResponse {
                 .studentName(student.getUser().getName())
                 .nim(student.getNim())
                 .email(student.getEmail())
-                .attendanceData(attendances.stream().map(AttendanceResponse::from).collect(Collectors.toList()))
+                .attendanceData(attendances != null
+                        ? attendances.stream().map(AttendanceResponse::from).collect(Collectors.toList())
+                        : null)
                 .build();
     }
 }
