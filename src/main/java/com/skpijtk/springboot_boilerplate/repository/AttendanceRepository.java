@@ -13,4 +13,5 @@ public interface AttendanceRepository extends JpaRepository<Attendance, Long>, J
     long countByAttendanceDateAndCheckInTimeIsNotNull(LocalDate date);
     long countByAttendanceDateAndIsLateTrue(LocalDate date);
     List<Attendance> findByStudentStudentId(Long studentId);
+    List<Attendance> findByStudentStudentIdAndAttendanceDateBetween(Long studentId, LocalDate startDate, LocalDate endDate);
 }

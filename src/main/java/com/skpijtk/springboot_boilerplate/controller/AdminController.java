@@ -1,6 +1,7 @@
 package com.skpijtk.springboot_boilerplate.controller;
 
 import com.skpijtk.springboot_boilerplate.dto.attendance.AttendanceResponse;
+import com.skpijtk.springboot_boilerplate.dto.attendance.RiwayatAttendanceResponse;
 import com.skpijtk.springboot_boilerplate.dto.response.ApiResponse;
 import com.skpijtk.springboot_boilerplate.model.Attendance;
 import com.skpijtk.springboot_boilerplate.model.Student;
@@ -204,5 +205,48 @@ public class AdminController {
         return ResponseEntity.ok(ApiResponse.success(responseData, "Data mahasiswa berhasil diambil"));
     }
 
+    @GetMapping("/list_attendance_mahasiswa")
+    public ResponseEntity<?> getListAttendanceMahasiswa(
+            @RequestParam("id_student") Long idStudent,
+            @RequestParam(value = "startdate", required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(value = "enddate", required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size) {
+
+        if (!studentRepository.existsById(idStudent)) {
+            throw new RuntimeException("Mahasiswa tidak ditemukan.");
+        }
+
+        List<Attendance> filteredAttendances = (startDate != null && endDate != null)
+                ? attendanceRepository.findByStudentStudentIdAndAttendanceDateBetween(idStudent, startDate, endDate)
+                : attendanceRepository.findByStudentStudentId(idStudent);
+
+        int totalData = filteredAttendances.size();
+        int fromIndex = page * size;
+        int toIndex = Math.min(fromIndex + size, totalData);
+
+        List<RiwayatAttendanceResponse> pagedList = (fromIndex < totalData)
+                ? filteredAttendances.subList(fromIndex, toIndex).stream()
+                    .map(RiwayatAttendanceResponse::fromEntity)
+                    .toList()
+                : Collections.emptyList();
+
+        Map<String, Object> inner = new HashMap<>();
+        inner.put("data", pagedList);
+        inner.put("totalData", totalData);
+        inner.put("totalPage", (int) Math.ceil((double) totalData / size));
+        inner.put("currentPage", page);
+        inner.put("pageSize", size);
+
+        Map<String, Object> outer = new HashMap<>();
+        outer.put("data", inner);
+        outer.put("message", "Data attendance berhasil diambil.");
+        outer.put("statusCode", 200);
+        outer.put("status", "OK");
+
+        return ResponseEntity.ok(outer);
+    }
 
 }
