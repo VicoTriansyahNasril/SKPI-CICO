@@ -38,4 +38,24 @@ public class AttendanceSpecification {
             return cb.and(predicates.toArray(new Predicate[0]));
         };
     }
+
+    public static Specification<Attendance> byStudentAndDateRange(Student student, LocalDate startDate, LocalDate endDate) {
+        return (root, query, cb) -> {
+            var predicates = cb.conjunction();
+
+            if (student != null) {
+                predicates = cb.and(predicates, cb.equal(root.get("student"), student));
+            }
+
+            if (startDate != null) {
+                predicates = cb.and(predicates, cb.greaterThanOrEqualTo(root.get("attendanceDate"), startDate));
+            }
+
+            if (endDate != null) {
+                predicates = cb.and(predicates, cb.lessThanOrEqualTo(root.get("attendanceDate"), endDate));
+            }
+
+            return predicates;
+        };
+    }
 }

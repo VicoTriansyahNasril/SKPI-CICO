@@ -6,6 +6,7 @@ import com.skpijtk.springboot_boilerplate.model.Student;
 import com.skpijtk.springboot_boilerplate.model.User;
 import com.skpijtk.springboot_boilerplate.repository.AttendanceRepository;
 import com.skpijtk.springboot_boilerplate.repository.StudentRepository;
+import com.skpijtk.springboot_boilerplate.service.StudentService;
 import com.skpijtk.springboot_boilerplate.service.UserService;
 import com.skpijtk.springboot_boilerplate.specification.AttendanceSpecification;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +25,7 @@ public class AdminController {
     private final UserService userService;
     private final StudentRepository studentRepository;
     private final AttendanceRepository attendanceRepository;
+    private final StudentService studentService;
 
     @GetMapping("/profile")
     public ResponseEntity<ApiResponse<?>> getAdminProfile(@RequestHeader("Authorization") String bearerToken) {
@@ -71,7 +73,6 @@ public class AdminController {
         String nimPrefix = null;
         String sortField = "attendanceDate";
 
-        // Jika isinya hanya angka (boleh kurang dari 9 digit), maka perlakukan sebagai filter NIM prefix
         if (sortBy != null && sortBy.matches("^\\d+$")) {
             nimPrefix = sortBy;
         } else if (sortBy != null && !sortBy.isBlank()) {
@@ -135,5 +136,16 @@ public class AdminController {
         responseData.put("pageSize", size);
 
         return ResponseEntity.ok(ApiResponse.success(responseData, "List check-in mahasiswa retrieved successfully"));
+    }
+
+    @GetMapping("/list_all_mahasiswa")
+    public ResponseEntity<ApiResponse<?>> getAllMahasiswa(
+            @RequestParam(required = false) String student_name,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startdate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate enddate,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        return studentService.getAllStudentsWithAttendance(student_name, startdate, enddate, page, size);
     }
 }
