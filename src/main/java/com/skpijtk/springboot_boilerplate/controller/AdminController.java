@@ -61,36 +61,46 @@ public class AdminController {
     @GetMapping("/list_checkin_mahasiswa")
     public ResponseEntity<ApiResponse<?>> getAllCheckinList(
             @RequestParam(required = false) String student_name,
-            @RequestParam(required = false) String nim,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startdate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate enddate,
-            @RequestParam(defaultValue = "attendanceDate") String sortBy,
-            @RequestParam(defaultValue = "desc") String sortDir,
+            @RequestParam(required = false) String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDir,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
+        String nimPrefix = null;
+        String sortField = "attendanceDate";
+
+        // Jika isinya hanya angka (boleh kurang dari 9 digit), maka perlakukan sebagai filter NIM prefix
+        if (sortBy != null && sortBy.matches("^\\d+$")) {
+            nimPrefix = sortBy;
+        } else if (sortBy != null && !sortBy.isBlank()) {
+            sortField = sortBy;
+        }
+
         List<Attendance> filteredList = attendanceRepository.findAll(
-                AttendanceSpecification.filterByCriteria(student_name, nim, startdate, enddate)
+                AttendanceSpecification.filterByCriteria(student_name, nimPrefix, startdate, enddate)
         );
 
-        // Manual sorting
         Comparator<Attendance> comparator;
-        if (sortBy.equalsIgnoreCase("nim")) {
+        if (sortField.equalsIgnoreCase("nim")) {
             comparator = Comparator.comparing(a -> a.getStudent().getNim(), Comparator.nullsLast(String::compareToIgnoreCase));
-        } else if (sortBy.equalsIgnoreCase("attendanceDate")) {
+        } else if (sortField.equalsIgnoreCase("attendanceDate")) {
             comparator = Comparator.comparing(Attendance::getAttendanceDate);
         } else {
-            comparator = Comparator.comparing(Attendance::getAttendanceId); // default fallback
+            comparator = Comparator.comparing(Attendance::getAttendanceId);
         }
-        if (sortDir.equalsIgnoreCase("desc")) comparator = comparator.reversed();
+
+        if (sortDir.equalsIgnoreCase("desc")) {
+            comparator = comparator.reversed();
+        }
+
         filteredList.sort(comparator);
 
-        // Manual pagination
         int start = page * size;
         int end = Math.min(start + size, filteredList.size());
         List<Attendance> pagedList = (start >= end) ? new ArrayList<>() : filteredList.subList(start, end);
 
-        // Response building
         List<Map<String, Object>> dataList = new ArrayList<>();
         for (Attendance a : pagedList) {
             Student s = a.getStudent();

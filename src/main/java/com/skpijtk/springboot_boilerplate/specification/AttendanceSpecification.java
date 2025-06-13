@@ -24,7 +24,7 @@ public class AttendanceSpecification {
             }
 
             if (nim != null && !nim.trim().isEmpty()) {
-                predicates.add(cb.like(cb.lower(studentJoin.get("nim")), nim.toLowerCase() + "%"));
+                predicates.add(cb.like(studentJoin.get("nim"), nim + "%"));
             }
 
             if (startDate != null) {
