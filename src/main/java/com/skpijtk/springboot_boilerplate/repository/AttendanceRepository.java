@@ -8,12 +8,22 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface AttendanceRepository extends JpaRepository<Attendance, Long>, JpaSpecificationExecutor<Attendance> {
+
     long countByAttendanceDateAndCheckInTimeIsNotNull(LocalDate date);
+
     long countByAttendanceDateAndIsLateTrue(LocalDate date);
+
     List<Attendance> findByStudentStudentId(Long studentId);
+
     List<Attendance> findByStudentStudentIdAndAttendanceDateBetween(Long studentId, LocalDate startDate, LocalDate endDate);
+
     List<Attendance> findByStudent(Student student);
+
+    boolean existsByStudentAndAttendanceDate(Student student, LocalDate date);
+
+    Optional<Attendance> findByStudentStudentIdAndAttendanceDate(Long studentId, LocalDate date);
 }

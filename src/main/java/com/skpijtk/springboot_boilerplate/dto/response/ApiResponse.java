@@ -32,6 +32,10 @@ public class ApiResponse<T> {
         return new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Internal Server Error", message, null);
     }
 
+    public static <T> ApiResponse<T> notFound(String message) {
+        return new ApiResponse<>(HttpStatus.NOT_FOUND.value(), "Not Found", message, null);
+    }
+
     public static <T> ApiResponse<T> error(T data, String message, int statusCode, String status) {
         ApiResponse<T> response = new ApiResponse<>();
         response.setData(data);
