@@ -154,7 +154,6 @@ public class MahasiswaController {
             attendance.setIsLate(now.toLocalTime().isAfter(LocalTime.of(8, 0)));
             attendance.setCreatedAt(now);
 
-            // ✅ updatedAt diset sama dengan createdAt agar tidak null
             attendance.setUpdatedAt(now);
 
             attendanceRepository.save(attendance);
@@ -181,4 +180,70 @@ public class MahasiswaController {
         }
     }
 
+    @PostMapping("/mahasiswa/checkout")
+    public ResponseEntity<Object> checkoutMahasiswa(
+            @RequestHeader("Authorization") String bearerToken,
+            @RequestBody Map<String, String> requestBody
+    ) {
+        try {
+            String token = bearerToken.replace("Bearer ", "");
+            Long userId = Long.valueOf(userService.extractUserIdFromToken(token));
+            Optional<Student> studentOpt = studentRepository.findByUser_UserId(userId);
+
+            if (studentOpt.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(ApiResponse.notFound("Mahasiswa tidak ditemukan untuk user ini."));
+            }
+
+            Student student = studentOpt.get();
+            LocalDate today = LocalDate.now();
+            LocalDateTime now = LocalDateTime.now();
+
+            Optional<Attendance> attendanceOpt = attendanceRepository
+                    .findByStudentStudentIdAndAttendanceDate(student.getStudentId(), today);
+
+            if (attendanceOpt.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(ApiResponse.badRequest("Anda belum melakukan check-in hari ini."));
+            }
+
+            Attendance attendance = attendanceOpt.get();
+
+            if (attendance.getCheckOutTime() != null) {
+                return ResponseEntity.status(HttpStatus.CONFLICT)
+                        .body(ApiResponse.badRequest("Anda sudah melakukan check-out hari ini."));
+            }
+
+            String notes = requestBody.get("notesCheckout");
+            if (notes == null || notes.trim().isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(ApiResponse.badRequest("Catatan check-out tidak boleh kosong."));
+            }
+
+            attendance.setCheckOutTime(now);
+            attendance.setCheckOutNotes(notes);
+            attendance.setUpdatedAt(now);
+            attendanceRepository.save(attendance);
+
+            Map<String, Object> data = new LinkedHashMap<>();
+            data.put("studentId", student.getStudentId());
+            data.put("studentName", student.getFirstName() + " " + student.getLastName());
+            data.put("nim", student.getNim());
+            data.put("attendanceId", attendance.getAttendanceId());
+            data.put("checkinTime", attendance.getCheckInTime());
+            data.put("checkOutTime", attendance.getCheckOutTime());
+            data.put("attendanceDate", attendance.getAttendanceDate());
+            data.put("notesCheckin", attendance.getCheckInNotes());
+            data.put("notesCheckout", attendance.getCheckOutNotes());
+            data.put("statusCheckin", "Checked-in");
+
+            return ResponseEntity.ok(
+                    ApiResponse.success(data, "Berhasil melakukan check-out.")
+            );
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.internalError("Terjadi kesalahan saat proses check-out."));
+        }
+    }
 }
