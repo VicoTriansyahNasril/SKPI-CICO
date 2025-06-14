@@ -44,7 +44,7 @@ public class RiwayatAttendanceResponse {
         calculatedStatus = "Belum Hadir";
     }
 
-     return new RiwayatAttendanceResponse(
+    return new RiwayatAttendanceResponse(
             attendance.getStudent().getStudentId(),
             attendance.getStudent().getUser().getUserId(),
             attendance.getStudent().getUser().getName(),
